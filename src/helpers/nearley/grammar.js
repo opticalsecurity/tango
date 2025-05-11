@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Generated automatically by nearley, version 2.20.1
 // http://github.com/Hardmath123/nearley
 (function () {
@@ -232,7 +233,7 @@ var grammar = {
     {"name": "_$ebnf$1$subexpression$1", "symbols": [(lexer.has("newline") ? {type: "newline"} : newline)]},
     {"name": "_$ebnf$1", "symbols": ["_$ebnf$1", "_$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "_", "symbols": ["_$ebnf$1"]},
-    {"name": "NEWLINE_TOKEN", "symbols": [(lexer.has("newline+") ? {type: "newline+"} : newline+)]}
+    {"name": "NEWLINE_TOKEN", "symbols": [{type: "newline+"}]}
 ]
   , ParserStart: "Program"
 }
