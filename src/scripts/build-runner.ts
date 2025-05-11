@@ -16,27 +16,44 @@ const year = formatDateComponent(currentDate.getFullYear() % 100); // Get last t
 // Get the first 7 digits of the current commit SHA
 const shortSha = execSync("git rev-parse --short=7 HEAD").toString().trim();
 
-// Define the final filename
-const finalFilename = `tango-${day}-${month}-${year}-${shortSha}`;
 const outDir = "./out";
-const outFile = join(outDir, finalFilename);
+const targets = [
+  "bun-linux-x64",
+  "bun-linux-arm64",
+  "bun-darwin-arm64",
+  "bun-windows-x64",
+  "bun-linux-x64-musl",
+  "bun-linux-arm64-musl",
+];
 
-// Construct the build command
-const command = `bun build --compile --minify --sourcemap --bytecode ./src/entrypoint.ts --outfile ${outFile}`;
+for (const target of targets) {
+  const platformArch = target.replace("bun-", ""); // "linux-x64", "linux-arm64", "darwin-arm64"
+  // Define the final filename
+  const finalFilename = `tango-${day}-${month}-${year}-${shortSha}-${platformArch}`;
+  const outFile = join(outDir, finalFilename);
 
-try {
-  // Check if the output file already exists and delete it
-  // bun build --compile throws an error if the output file already exists
-  if (statSync(outFile, { throwIfNoEntry: false })) {
-    console.log(`Output file ${outFile} already exists. Deleting...`);
-    rmSync(outFile);
-    console.log(`Deleted ${outFile}.`);
+  // Construct the build command
+  const command = `bun build --compile --minify --sourcemap --bytecode ./src/entrypoint.ts --outfile ${outFile} --target=${target}`;
+
+  try {
+    // Check if the output file already exists and delete it
+    // bun build --compile throws an error if the output file already exists
+    if (statSync(outFile, { throwIfNoEntry: false })) {
+      console.log(`Output file ${outFile} already exists. Deleting...`);
+      rmSync(outFile);
+      console.log(`Deleted ${outFile}.`);
+    }
+
+    console.log(`Executing command: ${command}`);
+    execSync(command, { stdio: "inherit" });
+    console.log(
+      `Build for ${target} completed successfully! Output: ${outFile}`
+    );
+  } catch (error) {
+    console.error(`Error during build for ${target}:`, error);
+    // Decide if you want to exit on first error or continue with other targets
+    // process.exit(1);
   }
-
-  console.log(`Executing command: ${command}`);
-  execSync(command, { stdio: "inherit" });
-  console.log("Build completed successfully!");
-} catch (error) {
-  console.error("Error during build:", error);
-  process.exit(1);
 }
+
+console.log("All builds completed.");
