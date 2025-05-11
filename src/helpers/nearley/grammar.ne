@@ -29,10 +29,16 @@ FuncDecl -> "fn" _ identifier _ "(" ParamList? ")" _ ":" _ Type _ "{" _ Statemen
   ([, , id, , , params, , , , type, , , , stmts]) => ({ type: "FuncDecl", id, params: params || [], returnType: type, body: stmts }) 
 %}
 
-ParamList -> Param ("," _ Param)*
-{% 
-  ([first, rest]) => [first, ...rest.map(([, , p]) => p)] 
+ParamList -> Param ParamListRest
+{%
+  ([first, rest]) => [first, ...rest]
 %}
+
+ParamListRest -> "," _ Param ParamListRest
+{%
+  ([, , param, rest]) => [param, ...rest]
+%}
+  |  /* empty */ {% () => [] %}
 
 Param -> identifier _ ":" _ Type {% 
   ([id, , , , type]) => ({ id, type }) 
