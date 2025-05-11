@@ -23,7 +23,7 @@ export default async function BuildHandler({ args }: { args: string[] }) {
 
   console.log("Tokens:", tokens);
 
-  const ast = Parse({ input: await file.text() });
+  const ast = await Parse({ input: await file.text() });
 
   console.log("AST:", ast);
 }
