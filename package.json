@@ -1,0 +1,15 @@
+{
+  "name": "tango",
+  "description": "Tango is a open-source programming language that is designed to be simple and easy to use like JavaScript and TypeScript, but with a focus on performance and low-level control like C and C++.",
+  "version": "0.0.0.1",
+  "module": "src/entrypoint.ts",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
