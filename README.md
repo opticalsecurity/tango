@@ -1,6 +1,6 @@
 # Tango
 
-![Build](https://img.shields.io/github/actions/workflow/status/opticalsecurity/tango/ci.yml)
+![Build](https://img.shields.io/github/actions/workflow/status/opticalsecurity/tango/.github/workflows/build.yaml)
 ![Version](https://img.shields.io/github/v/release/opticalsecurity/tango)
 ![License](https://img.shields.io/github/license/opticalsecurity/tango)
 
