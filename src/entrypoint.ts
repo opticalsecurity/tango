@@ -29,7 +29,7 @@ if (args.length === 0) {
   } else if (command === "--help") {
     handleHelp();
   } else {
-    console.log(`Comando desconocido: ${command}`);
+    console.log(`Unknown command: ${command}`);
     handleHelp();
   }
 }
