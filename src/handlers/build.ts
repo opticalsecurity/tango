@@ -1,4 +1,5 @@
 import { Tokenize } from "helpers/lexer";
+import { Parse } from "helpers/parser";
 
 export default async function BuildHandler({ args }: { args: string[] }) {
   console.log("Building with args:", args);
@@ -21,4 +22,8 @@ export default async function BuildHandler({ args }: { args: string[] }) {
   });
 
   console.log("Tokens:", tokens);
+
+  const ast = Parse({ input: await file.text() });
+
+  console.log("AST:", ast);
 }

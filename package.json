@@ -11,7 +11,8 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/moo": "^0.5.10"
+    "@types/moo": "^0.5.10",
+    "@types/nearley": "^2.11.5"
   },
   "peerDependencies": {
     "typescript": "^5"
