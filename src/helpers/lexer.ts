@@ -4,6 +4,7 @@ export const lexer = moo.compile({
   // Ignored tokens
   whitespace: { match: /[ \t]+/, lineBreaks: false },
   comment: { match: /\/\/.*?$/, lineBreaks: false },
+  comment_multiline: { match: /\/\*[^]*?\*\//, lineBreaks: true },
 
   // Literals
   float: /[0-9]+\.[0-9]+/, // Must come before 'number'
@@ -88,7 +89,7 @@ export const lexer = moo.compile({
   error: moo.error,
 
   // Newline (should be last so it doesn't override other tokens)
-  newline: { match: /\r\n|\n/, lineBreaks: true },
+  newline: { match: /\r\n|\r|\n/, lineBreaks: true },
 });
 
 export async function Tokenize({ input }: { input: string }) {
