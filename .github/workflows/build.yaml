@@ -1,20 +1,46 @@
-name: Build Tango Project
+name: Build Tango Project and Create Release
 on:
   push:
     branches:
       - main
 jobs:
-  Build:
+  build-and-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v2
-      - uses: oven-sh/setup-bun@v2
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Install Dependencies
         run: bun install
+
       - name: Build Project
         run: bun run build
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+
+      - name: Create Release Tag Name
+        id: release_tag
+        run: |
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          TAG_NAME="v$(date +'%d-%m-%y')-${SHORT_SHA}"
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: tango-builds
-          path: ./out
+          tag_name: ${{ steps.release_tag.outputs.TAG_NAME }}
+          name: Release ${{ steps.release_tag.outputs.TAG_NAME }}
+          body: |
+            Automated release for commit ${{ github.sha }}.
+            Builds for various platforms are attached.
+          draft: false
+          prerelease: false
+          files: |
+            ./out/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
