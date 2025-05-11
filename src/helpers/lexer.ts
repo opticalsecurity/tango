@@ -88,7 +88,7 @@ export const lexer = moo.compile({
   error: moo.error,
 
   // Newline (should be last so it doesn't override other tokens)
-  newline: { match: /\n/, lineBreaks: true },
+  newline: { match: /\r\n|\n/, lineBreaks: true },
 });
 
 export async function Tokenize({ input }: { input: string }) {
