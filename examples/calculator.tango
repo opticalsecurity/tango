@@ -1,0 +1,47 @@
+// Simple calculator in Tango
+
+fn add(a: int, b: int): int {
+  return a + b;
+}
+
+fn subtract(a: int, b: int): int {
+  return a - b;
+}
+
+fn multiply(a: int, b: int): int {
+  return a * b;
+}
+
+fn divide(a: int, b: int): float {
+  if (b == 0) {
+    print("Error: division by zero!");
+    return 0.0;
+  }
+  return a / b;
+}
+
+fn main(): int {
+  let x: int = input("Enter first number: ");
+  let y: int = input("Enter second number: ");
+  let op: string = input("Enter operation (+, -, *, /): ");
+
+  let result: float = 0.0;
+
+  if (op == "+") {
+    result = add(x, y);
+  } else if (op == "-") {
+    result = subtract(x, y);
+  } else if (op == "*") {
+    result = multiply(x, y);
+  } else if (op == "/") {
+    result = divide(x, y);
+  } else {
+    print("Unknown operation!");
+    return 1;
+  }
+
+  print("Result: " + result);
+  return 0;
+}
+
+main();
