@@ -8,7 +8,7 @@ const lexer = require("../lexer").lexer;
 Program -> _ StatementList _
 
 StatementList -> StatementListItem:+
-StatementListItem -> Statement NL
+StatementListItem -> Statement NEWLINE_TOKEN
 
 Statement ->
     VarDecl
@@ -25,20 +25,18 @@ VarDecl -> "let" _ identifier _ ":" _ Type _ "=" _ Expression _ ";" {%
   ([, , id, , , , type, , , , expr]) => ({ type: "VarDecl", id, varType: type, expr }) 
 %}
 
-FuncDecl -> "fn" _ identifier _ "(" ParamList? ")" _ ":" _ Type _ "{" _ StatementList _ "}" {% 
-  ([, , id, , , params, , , , type, , , , stmts]) => ({ type: "FuncDecl", id, params: params || [], returnType: type, body: stmts }) 
+FuncDecl -> "fn" _ identifier _ "(" OptionalParamList ")" _ ":" _ Type _ "{" _ StatementList _ "}" {% 
+  ([, , id, , , params, , , , type, , , , stmts]) => ({ type: "FuncDecl", id, params: params, returnType: type, body: stmts }) 
 %}
+
+OptionalParamList -> ParamList {% id %} | null {% () => [] %}
 
 ParamList -> Param ParamListRest
 {%
   ([first, rest]) => [first, ...rest]
 %}
 
-ParamListRest -> "," _ Param ParamListRest
-{%
-  ([, , param, rest]) => [param, ...rest]
-%}
-| /* empty */ {% () => [] %}
+ParamListRest -> "," _ Param ParamListRest {% ([, , param, rest]) => [param, ...rest] %} | null {% data => [] %}
 
 Param -> identifier _ ":" _ Type {% 
   ([id, , , , type]) => ({ id, type }) 
@@ -47,9 +45,16 @@ Param -> identifier _ ":" _ Type {%
 StructDecl -> "struct" _ identifier _ "{" _ StructFieldList _ "}" {% 
   ([, , id, , , fields]) => ({ type: "StructDecl", id, fields }) 
 %}
-StructFieldList -> StructField (NL StructField)* {% 
-  ([first, rest]) => [first, ...rest.map(([, f]) => f)] 
+
+StructFieldList -> StructField RestOfStructFields {%
+    ([sf, rsf_array]) => [sf, ...rsf_array]
 %}
+
+RestOfStructFields -> NEWLINE_TOKEN StructField RestOfStructFields {%
+    ([, sf, more_sf]) => [sf, ...more_sf]
+%}
+| null {% () => [] %}
+
 StructField -> identifier _ ":" _ Type _ ";" {% 
   ([id, , , , type]) => ({ id, type }) 
 %}
@@ -62,18 +67,28 @@ InputStmt -> "input" _ "(" _ string _ ")" _ ";" {%
   ([, , , , prompt]) => ({ type: "InputStmt", prompt }) 
 %}
 
-ReturnStmt -> "return" _ Expression? _ ";" {% 
-  ([, expr]) => ({ type: "ReturnStmt", expr: expr || null }) 
+ReturnStmt -> "return" _ OptionalExpression _ ";" {% 
+  ([, expr]) => ({ type: "ReturnStmt", expr: expr }) 
 %}
 
-IfStmt -> "if" _ "(" _ Expression _ ")" _ "{" _ StatementList _ "}" ElseIfClause* ElseClause? {% 
+OptionalExpression -> Expression {% id %} | null {% () => null %}
+
+IfStmt -> "if" _ "(" _ Expression _ ")" _ "{" _ StatementList _ "}" OptionalElseIfClauses OptionalElseClause {% 
   ([, , , , cond, , , , thenStmts, elseIfs, elseClause]) => ({
-    type: "IfStmt", cond, then: thenStmts, elseIfs, else: elseClause || null
+    type: "IfStmt", cond, then: thenStmts, elseIfs: elseIfs, else: elseClause
   }) 
 %}
+
+OptionalElseIfClauses -> ElseIfClause OptionalElseIfClauses {% (d) => [d[0], ...d[1]] %}
+                       | null {% () => [] %}
+
 ElseIfClause -> _ "else" _ "if" _ "(" _ Expression _ ")" _ "{" _ StatementList _ "}" {% 
   ([, , , , , , cond, , , , stmts]) => ({ cond, then: stmts }) 
 %}
+
+OptionalElseClause -> ElseClause {% (d) => d[0] %}
+                   | null {% () => null %}
+
 ElseClause -> _ "else" _ "{" _ StatementList _ "}" {% 
   ([, , , , stmts]) => stmts 
 %}
@@ -88,66 +103,79 @@ ExprStmt -> Expression _ ";" {%
 
 Expression -> Assignment
 
-Assignment -> LogicOr (assignOp _ Assignment)? {% 
-  ([left, right]) => right ? ({ type: "Assignment", left, right: right[2] }) : left 
+Assignment -> LogicOr OptionalAssignment {% 
+  ([left, right]) => right ? ({ type: "Assignment", operator: right.op, left, right: right.expr }) : left 
 %}
+OptionalAssignment -> assignOp _ Assignment {% ([op, , expr]) => ({op, expr}) %} | null {% () => null %}
+
 assignOp -> "="
 
-LogicOr -> LogicAnd (orOp _ LogicAnd)* {% 
-  ([first, rest]) => rest.reduce((acc, [op, , right]) => ({ type: "LogicalExpr", op, left: acc, right }), first) 
-%}
+LogicOr -> LogicAnd (orOp _ LogicAnd):* {% ([first, rest]) => rest.reduce((acc, [op, , right]) => ({ type: "LogicalExpr", op, left: acc, right }), first) %}
 orOp -> "||"
 
-LogicAnd -> Equality (andOp _ Equality)* {% 
-  ([first, rest]) => rest.reduce((acc, [op, , right]) => ({ type: "LogicalExpr", op, left: acc, right }), first) 
-%}
+LogicAnd -> Equality (andOp _ Equality):* {% ([first, rest]) => rest.reduce((acc, [op, , right]) => ({ type: "LogicalExpr", op, left: acc, right }), first) %}
 andOp -> "&&"
 
-Equality -> Relational ((eqOp | neqOp) _ Relational)* {% 
-  ([first, rest]) => rest.reduce((acc, [op, , right]) => ({ type: "BinaryExpr", op, left: acc, right }), first) 
-%}
+Equality -> Relational ((eqOp | neqOp) _ Relational):* {% ([first, rest]) => rest.reduce((acc, [op, , right]) => ({ type: "BinaryExpr", op, left: acc, right }), first) %}
 eqOp -> "=="
 neqOp -> "!="
 
-Relational -> AddSub ((ltOp | lteOp | gtOp | gteOp) _ AddSub)* {% 
-  ([first, rest]) => rest.reduce((acc, [op, , right]) => ({ type: "BinaryExpr", op, left: acc, right }), first) 
-%}
+Relational -> AddSub ((ltOp | lteOp | gtOp | gteOp) _ AddSub):* {% ([first, rest]) => rest.reduce((acc, [op, , right]) => ({ type: "BinaryExpr", op, left: acc, right }), first) %}
 ltOp -> "<"
 lteOp -> "<="
 gtOp -> ">"
 gteOp -> ">="
 
-AddSub -> MulDiv ((plusOp | minusOp) _ MulDiv)* {% 
-  ([first, rest]) => rest.reduce((acc, [op, , right]) => ({ type: "BinaryExpr", op, left: acc, right }), first) 
-%}
+AddSub -> MulDiv ((plusOp | minusOp) _ MulDiv):* {% ([first, rest]) => rest.reduce((acc, [op, , right]) => ({ type: "BinaryExpr", op, left: acc, right }), first) %}
 plusOp -> "+"
 minusOp -> "-"
 
-MulDiv -> Unary ((timesOp | divideOp | modOp) _ Unary)* {% 
-  ([first, rest]) => rest.reduce((acc, [op, , right]) => ({ type: "BinaryExpr", op, left: acc, right }), first) 
-%}
+MulDiv -> Unary ((timesOp | divideOp | modOp) _ Unary):* {% ([first, rest]) => rest.reduce((acc, [op, , right]) => ({ type: "BinaryExpr", op, left: acc, right }), first) %}
 timesOp -> "*"
 divideOp -> "/"
 modOp -> "%"
 
 Unary -> (notOp | ampOp | starOp) _ Unary {% 
-  ([op, , expr]) => ({ type: "UnaryExpr", op, expr }) 
+  ([op, , expr]) => ({ type: "UnaryExpr", op: op[0], argument: expr }) 
 %}
-| Call
-notOp -> "!"
+| AccessOrCallChain
 
+notOp -> "!"
 ampOp -> "&"
 starOp -> "*"
 
-Call -> Primary (CallArgs)* {% 
-  ([callee, calls]) => calls.reduce((acc, args) => ({ type: "CallExpr", callee: acc, args }), callee) 
+AccessOrCallChain -> Primary (PostfixOperation):* {% 
+  ([object, operations]) => operations.reduce((acc, op) => {
+    if (op.opType === "call") {
+      return { type: "CallExpr", callee: acc, arguments: op.args };
+    } else if (op.opType === "member") {
+      return { type: "MemberExpr", object: acc, property: op.property };
+    } else if (op.opType === "index") {
+      return { type: "IndexExpr", object: acc, index: op.index };
+    }
+    return acc;
+  }, object) %}
+
+PostfixOperation ->
+    CallArguments
+  | MemberAccess
+  | ArrayIndex
+
+CallArguments -> _ "(" OptionalArgList ")" {% 
+  ([, , args]) => ({ opType: "call", args: args })
 %}
-CallArgs -> _ "(" ArgList? ")" {% 
-  ([, , args]) => args || [] 
+
+OptionalArgList -> ArgList {% id %} | null {% () => [] %}
+
+MemberAccess -> _ "." _ identifier {% 
+  ([, , , id]) => ({ opType: "member", property: id })
 %}
-ArgList -> Expression ("," _ Expression)* {% 
-  ([first, rest]) => [first, ...rest.map(([, , e]) => e)] 
+
+ArrayIndex -> _ "[" _ Expression _ "]" {% 
+  ([, , , expr,]) => ({ opType: "index", index: expr })
 %}
+
+ArgList -> Expression ("," _ Expression):* {% ([first, rest]) => [first, ...rest.map(([, , e]) => e)] %}
 
 Primary ->
     number
@@ -160,32 +188,33 @@ Primary ->
 | StructLiteral
 | "(" _ Expression _ ")" {% ([, , expr]) => expr %}
 
-ArrayLiteral -> "[" _ (Expression ("," _ Expression)*)? _ "]" {% 
-  ([, , first]) => ({ type: "ArrayLiteral", elements: first ? [first[0], ...first[1].map(([, , e]) => e)] : [] }) 
+ArrayLiteral -> "[" _ OptionalExpressionList _ "]" {% 
+  ([, , exprList]) => ({ type: "ArrayLiteral", elements: exprList })
 %}
+OptionalExpressionList -> ExpressionList {% id %} | null {% () => [] %}
+ExpressionList -> Expression ("," _ Expression):* {% ([first, rest]) => [first, ...rest.map(([, , e]) => e)] %}
 
-StructLiteral -> identifier _ "{" _ StructLiteralFields? _ "}" {% 
-  ([id, , , , fields]) => ({ type: "StructLiteral", id, fields: fields || [] }) 
+StructLiteral -> identifier _ "{" _ OptionalStructLiteralFields _ "}" {% 
+  ([id, , , , fields]) => ({ type: "StructLiteral", id, fields: fields })
 %}
-StructLiteralFields -> StructLiteralField ("," _ StructLiteralField)* {% 
-  ([first, rest]) => [first, ...rest.map(([, , f]) => f)] 
-%}
+OptionalStructLiteralFields -> StructLiteralFields {% id %} | null {% () => [] %}
+StructLiteralFields -> StructLiteralField ("," _ StructLiteralField):* {% ([first, rest]) => [first, ...rest.map(([, , f]) => f)] %}
 StructLiteralField -> identifier _ ":" _ Expression {% 
   ([id, , , , expr]) => ({ id, expr }) 
 %}
 
 Type -> "int" | "float" | "string" | "bool" | ArrayType | PointerType | StructType
-ArrayType -> Type "[]" {% ([type]) => ({ type: "ArrayType", base: type }) %}
-PointerType -> "*" Type {% ([, type]) => ({ type: "PointerType", base: type }) %}
+ArrayType -> Type _ "[]" {% ([type]) => ({ type: "ArrayType", baseType: type }) %}
+PointerType -> "*" _ Type {% ([, , type]) => ({ type: "PointerType", baseType: type }) %}
 StructType -> identifier
 
-boolean -> "true" {% () => true %} | "false" {% () => false %}
-null -> "null" {% () => null %}
+boolean -> "true" {% ([d]) => ({ type: "Literal", value: true, raw: d.value }) %} | "false" {% ([d]) => ({ type: "Literal", value: false, raw: d.value }) %}
+null -> "null" {% ([d]) => ({ type: "Literal", value: null, raw: d.value }) %}
 
-identifier -> %identifier
-number -> %number {% d => Number(d[0].value) %}
-float -> %float {% d => Number(d[0].value) %}
-string -> %string {% d => d[0].value.slice(1, -1) %}
+identifier -> %identifier {% ([d]) => ({ type: "Identifier", name: d.value }) %}
+number -> %number {% ([d]) => ({ type: "Literal", value: Number(d.value), raw: d.value }) %}
+float -> %float {% ([d]) => ({ type: "Literal", value: Number(d.value), raw: d.value }) %}
+string -> %string {% ([d]) => ({ type: "Literal", value: d.value.slice(1, -1), raw: d.value }) %}
 
-_ -> (%whitespace | %newline)*
-NL -> %newline
+_ -> (%whitespace | %newline):*
+NEWLINE_TOKEN -> %newline+
