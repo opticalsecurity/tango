@@ -6,35 +6,38 @@ export const lexer = moo.compile({
   comment: { match: /\/\/.*?$/, lineBreaks: false },
   comment_multiline: { match: /\/\*[^]*?\*\//, lineBreaks: true },
 
+  // Keywords (must come before identifier)
+  KW_WHILE: "while",
+  KW_IF: "if",
+  KW_ELSE: "else",
+  KW_LET: "let",
+  KW_FN: "fn",
+  KW_RETURN: "return",
+  KW_TRUE: "true",
+  KW_FALSE: "false",
+  KW_NULL: "null",
+  KW_STRUCT: "struct",
+
+  // Primitive types (must come before identifier)
+  TYPE_INT: "int",
+  TYPE_FLOAT: "float",
+  TYPE_STRING: "string",
+  TYPE_BOOL: "bool",
+
+  // I/O functions (must come before identifier)
+  IO_PRINT: "print",
+  IO_INPUT: "input",
+
   // Literals
   float: /[0-9]+\.[0-9]+/, // Must come before 'number'
   number: /0|[1-9][0-9]*/,
   string: /"(?:\\["\\]|[^\n"\\])*"/,
 
-  // Primitive types
-  type: ["int", "float", "string", "bool"],
-
-  // Keywords
-  keyword: [
-    "while",
-    "if",
-    "else",
-    "let",
-    "fn",
-    "return",
-    "true",
-    "false",
-    "null",
-  ],
-
-  // I/O functions
-  io: ["input", "print"],
-
   // Operators
   assign: "=",
   plus: "+",
   minus: "-",
-  times: "*",
+  times: "*", // For multiplication
   divide: "/",
   mod: "%",
   eq: "==",
@@ -48,8 +51,8 @@ export const lexer = moo.compile({
   not: "!",
 
   // Pointers and arrays
-  amp: "&",
-  star: "*",
+  ampersand: "&", // Changed from amp to avoid conflict if "amp" is a keyword/identifier
+  star: "*", // For pointers, distinct from 'times' if necessary, though value is same. Nearley will use %star or %times.
   lbracket: "[",
   rbracket: "]",
 
@@ -63,28 +66,10 @@ export const lexer = moo.compile({
   comma: ",",
   colon: ":",
   dot: ".",
-  eol: ";",
+  eol: ";", // End of Line/Statement
 
-  // Identifiers (must come after keywords and types)
-  identifier: {
-    match: /[a-zA-Z_][a-zA-Z0-9_]*/,
-    type: moo.keywords({
-      // This ensures keywords and types are recognized before identifiers
-      type: ["int", "float", "string", "bool"],
-      keyword: [
-        "while",
-        "if",
-        "else",
-        "let",
-        "fn",
-        "return",
-        "true",
-        "false",
-        "null",
-      ],
-      io: ["input", "print"],
-    }),
-  },
+  // Identifiers (must come after keywords, types, and IO functions)
+  identifier: /[a-zA-Z_][a-zA-Z0-9_]*/,
 
   error: moo.error,
 

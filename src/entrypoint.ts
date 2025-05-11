@@ -1,4 +1,4 @@
-import BuildHandler from "handlers/build";
+import { BuildHandler } from "handlers/build";
 
 function handleRun(args: string[]) {
   console.log("Running with args:", args);
@@ -21,7 +21,15 @@ if (args.length === 0) {
   const commandArgs = args.slice(1);
 
   if (command === "--build") {
-    BuildHandler({ args: commandArgs });
+    if (commandArgs.length < 1) {
+      console.error("Error: No file path specified for --build command.");
+      handleHelp();
+      process.exit(1);
+    }
+    const filePath = commandArgs[0];
+    // TODO: Allow specifying outDir via command line arguments
+    const outDir = "./tango_out";
+    BuildHandler({ filePath, outDir });
   } else if (command === "--run") {
     handleRun(commandArgs);
   } else if (command === "--help") {

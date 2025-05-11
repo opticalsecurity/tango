@@ -12,10 +12,10 @@ fn multiply(a: int, b: int): int {
   return a * b;
 }
 
-fn divide(a: int, b: int): float {
+fn divide(a: int, b: int): int {
   if (b == 0) {
-    print("Error: division by zero!");
-    return 0.0;
+    print("Error: Division by zero"); // Semicolon added, string adjusted
+    return 0;
   }
   return a / b;
 }
@@ -25,7 +25,7 @@ fn main(): int {
   let y: int = input("Enter second number: ");
   let op: string = input("Enter operation (+, -, *, /): ");
 
-  let result: float = 0.0;
+  let result: int = 0;
 
   if (op == "+") {
     result = add(x, y);
@@ -36,11 +36,14 @@ fn main(): int {
   } else if (op == "/") {
     result = divide(x, y);
   } else {
-    print("Unknown operation!");
+    print("Invalid operator"); // Semicolon added, string adjusted
     return 1;
   }
 
-  print("Result: " + result);
+  print("Result: "); // Semicolon added
+  print(result);    // Semicolon added
+  print("\\n");      // Semicolon added
+
   return 0;
 }
 

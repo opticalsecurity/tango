@@ -7,7 +7,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "bun run ./src/scripts/build-runner.ts"
+    "build": "bun run ./src/scripts/build-runner.ts",
+    "compile-grammar": "nearleyc .\\\\src\\\\helpers\\\\nearley\\\\grammar.ne -o .\\\\src\\\\helpers\\\\nearley\\\\grammar.js"
   },
   "devDependencies": {
     "@types/bun": "latest",
