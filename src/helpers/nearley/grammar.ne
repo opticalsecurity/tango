@@ -1,13 +1,14 @@
 @{%
 const moo = require("moo");
-const lexer = require("./lexer").lexer;
+const lexer = require("../lexer").lexer;
 %}
 
 @lexer lexer
 
 Program -> _ StatementList _
 
-StatementList -> Statement (NL Statement)*
+StatementList -> StatementListItem:+
+StatementListItem -> Statement NL
 
 Statement ->
     VarDecl
