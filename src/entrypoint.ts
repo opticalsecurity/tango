@@ -1,6 +1,4 @@
-function handleBuild(args: string[]) {
-  console.log("Building with args:", args);
-}
+import BuildHandler from "handlers/build";
 
 function handleRun(args: string[]) {
   console.log("Running with args:", args);
@@ -23,7 +21,7 @@ if (args.length === 0) {
   const commandArgs = args.slice(1);
 
   if (command === "--build") {
-    handleBuild(commandArgs);
+    BuildHandler({ args: commandArgs });
   } else if (command === "--run") {
     handleRun(commandArgs);
   } else if (command === "--help") {

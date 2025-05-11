@@ -10,7 +10,8 @@
     "build": "bun run ./src/scripts/build-runner.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/moo": "^0.5.10"
   },
   "peerDependencies": {
     "typescript": "^5"
