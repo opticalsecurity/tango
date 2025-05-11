@@ -6,6 +6,9 @@
   "license": "MIT",
   "type": "module",
   "private": true,
+  "scripts": {
+    "build": "bun run ./src/scripts/build-runner.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
