@@ -12,14 +12,14 @@ StatementListItem -> Statement NL
 
 Statement ->
     VarDecl
-  | FuncDecl
-  | StructDecl
-  | PrintStmt
-  | InputStmt
-  | ReturnStmt
-  | IfStmt
-  | WhileStmt
-  | ExprStmt
+| FuncDecl
+| StructDecl
+| PrintStmt
+| InputStmt
+| ReturnStmt
+| IfStmt
+| WhileStmt
+| ExprStmt
 
 VarDecl -> "let" _ identifier _ ":" _ Type _ "=" _ Expression _ ";" {% 
   ([, , id, , , , type, , , , expr]) => ({ type: "VarDecl", id, varType: type, expr }) 
@@ -38,7 +38,7 @@ ParamListRest -> "," _ Param ParamListRest
 {%
   ([, , param, rest]) => [param, ...rest]
 %}
-  |  /* empty */ {% () => [] %}
+| /* empty */ {% () => [] %}
 
 Param -> identifier _ ":" _ Type {% 
   ([id, , , , type]) => ({ id, type }) 
@@ -133,8 +133,9 @@ modOp -> "%"
 Unary -> (notOp | ampOp | starOp) _ Unary {% 
   ([op, , expr]) => ({ type: "UnaryExpr", op, expr }) 
 %}
-  | Call
+| Call
 notOp -> "!"
+
 ampOp -> "&"
 starOp -> "*"
 
@@ -150,14 +151,14 @@ ArgList -> Expression ("," _ Expression)* {%
 
 Primary ->
     number
-  | float
-  | string
-  | boolean
-  | null
-  | identifier
-  | ArrayLiteral
-  | StructLiteral
-  | "(" _ Expression _ ")" {% ([, , expr]) => expr %}
+| float
+| string
+| boolean
+| null
+| identifier
+| ArrayLiteral
+| StructLiteral
+| "(" _ Expression _ ")" {% ([, , expr]) => expr %}
 
 ArrayLiteral -> "[" _ (Expression ("," _ Expression)*)? _ "]" {% 
   ([, , first]) => ({ type: "ArrayLiteral", elements: first ? [first[0], ...first[1].map(([, , e]) => e)] : [] }) 
