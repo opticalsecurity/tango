@@ -16,7 +16,9 @@ export default async function BuildHandler({ args }: { args: string[] }) {
   const filePath = args[0];
   const file = Bun.file(filePath);
 
-  const tokens = await Tokenize({ input: await file.text() });
+  const tokens = await Tokenize({ input: await file.text() }).then(() => {
+    console.log("Tokens generated successfully!");
+  });
 
   console.log("Tokens:", tokens);
 }
