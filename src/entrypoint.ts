@@ -26,7 +26,7 @@ if (args.length === 0) {
       handleHelp();
       process.exit(1);
     }
-    const filePath = commandArgs[0];
+    const filePath = commandArgs[0]!;
     // TODO: Allow specifying outDir via command line arguments
     const outDir = "./tango_out";
     BuildHandler({ filePath, outDir });
