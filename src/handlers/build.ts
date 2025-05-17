@@ -17,12 +17,10 @@ export async function BuildHandler({ filePath, outDir }: BuildOptions) {
 
   const fileContent = await Bun.file(filePath).text();
 
-  // Log all tokens and exit
-  const tokens = await Tokenize({ input: fileContent });
-  console.log("Tokens:", JSON.stringify(tokens, null, 2));
-  process.exit(0);
+  // const tokens = await Tokenize({ input: fileContent });
+  // console.log("Tokens:", JSON.stringify(tokens, null, 2));
+  // process.exit(0); // Ensure this line is commented out or removed
 
-  // This part will not be reached due to process.exit(0)
   try {
     const ast = await Parse({ inputString: fileContent });
     console.log("AST:", JSON.stringify(ast, null, 2));

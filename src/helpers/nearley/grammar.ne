@@ -5,36 +5,70 @@ const lexer = require("../lexer").lexer;
 
 @lexer lexer
 
-OptionalLeadingPart -> _ NL | null
-OptionalTrailingPart -> _ NL | null
+# OptionalLeadingPart -> _ NL | null // Comentado
+# OptionalTrailingPart -> _ NL | null // Comentado
 
-Program -> OptionalLeadingPart _ StatementList OptionalTrailingPart _ {%
-  (data) => {
-    return data[2]; // StatementList
-  }
+# Program -> OptionalLeadingPart _ StatementList OptionalTrailingPart _ {% // Comentado
+#  (data) => {
+#    return data[2]; // StatementList
+#  }
+# %}
+Program -> Prefix FuncDecl # Usar Prefix para manejar cualquier basura inicial
+
+Prefix -> (PrefixItem):* {% () => null %}
+PrefixItem -> _ {% () => null %}
+            | NL {% () => null %}
+
+StatementList -> (StatementListItem):* {% 
+    // Cero o más StatementListItems
+    (d) => {
+      if (!d || !d[0]) return []; // Maneja el caso de cero items
+      return d[0].map(item => item[0]); // Extrae los statements reales
+    }
 %}
 
-StatementList -> StatementListItem:+
-StatementListItem -> Statement _ NL
+StatementListItem -> Statement _ NL {% (d) => d[0] %} # Un Statement seguido de NL
 
-Statement ->
-    VarDecl      {% id %}
-|   FuncDecl
-|   StructDecl
-|   PrintStmt
-|   InputStmt
-|   ReturnStmt
-|   IfStmt
-|   WhileStmt
-|   ExprStmt
+Statement -> ReturnStmt # Temporalmente, los cuerpos de las funciones solo pueden tener ReturnStmts
+# Statement -> FuncDecl # Comentado para evitar recursión por ahora
+# Statement -> VarDecl
+# Statement -> PrintStmt
+# Statement -> IfStmt
+# Statement -> WhileStmt
+# Statement -> ForStmt
+# Statement -> ReturnStmt
+# Statement -> ExpressionStmt
+# Statement -> BlockStmt
+# Statement -> Assignment
+# Statement -> PointerAssignment
+# Statement -> ArrayElementAssignment
 
-VarDecl -> %KW_LET _ identifier _ %assign _ Expression _ %eol {%
-  (d) => {
+# La siguiente definición de VarDecl estaba causando un error cuando se comentaba con //
+# VarDecl -> %KW_LET _ identifier OptionalTypeAnnotation OptionalInitializer _ %eol {% 
+#   (data) => {
+#     // ... (contenido anterior de VarDecl)
+#     return {
+#       type: "VarDecl",
+#       id: data[2],
+#       varType: data[3],
+#       expr: data[4]
+#     };
+#   }
+# %}
+
+OptionalTypeAnnotation -> _ %colon _ Type {% ([, , , type]) => type %} | null {% () => null %}
+OptionalInitializer -> _ %assign _ Expression {% ([, , , expr]) => expr %} | null {% () => null %}
+
+# La definición completa de VarDecl se mantiene aquí.
+# No será utilizada por 'Statement' mientras esté simplificada,
+# pero debería ser sintácticamente correcta para Nearley.
+VarDecl -> %KW_LET _ identifier OptionalTypeAnnotation OptionalInitializer _ %eol {%
+  (data) => {
     return {
       type: "VarDecl",
-      id: d[2],       // El token identifier
-      varType: null,  // No hay tipo en esta versión simplificada
-      expr: d[5]      // El nodo Expression (índice 0:KW_LET, 1:_, 2:id, 3:_, 4:assign, 5:expr)
+      id: data[2],
+      varType: data[3],
+      expr: data[4]
     };
   }
 %}

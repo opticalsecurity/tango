@@ -34,21 +34,23 @@ export const lexer = moo.compile({
   string: /"(?:\\["\\]|[^\n"\\])*"/,
 
   // Operators
+  eq: "==",
+  neq: "!=",
+  lte: "<=",
+  gte: ">=",
+  and: "&&",
+  or: "||",
+
   assign: "=",
+  lt: "<",
+  gt: ">",
+  not: "!",
+
   plus: "+",
   minus: "-",
   times: "*", // For multiplication
   divide: "/",
   mod: "%",
-  eq: "==",
-  neq: "!=",
-  lt: "<",
-  lte: "<=",
-  gt: ">",
-  gte: ">=",
-  and: "&&",
-  or: "||",
-  not: "!",
 
   // Pointers and arrays
   ampersand: "&", // Changed from amp to avoid conflict if "amp" is a keyword/identifier

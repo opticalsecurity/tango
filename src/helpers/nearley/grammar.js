@@ -8,35 +8,36 @@ const lexer = require("../lexer").lexer;
 var grammar = {
     Lexer: lexer,
     ParserRules: [
-    {"name": "OptionalLeadingPart", "symbols": ["_", "NL"]},
-    {"name": "OptionalLeadingPart", "symbols": []},
-    {"name": "OptionalTrailingPart", "symbols": ["_", "NL"]},
-    {"name": "OptionalTrailingPart", "symbols": []},
-    {"name": "Program", "symbols": ["OptionalLeadingPart", "_", "StatementList", "OptionalTrailingPart", "_"], "postprocess": 
-        (data) => {
-          return data[2]; // StatementList
+    {"name": "Program", "symbols": ["Prefix", "FuncDecl"]},
+    {"name": "Prefix$ebnf$1", "symbols": []},
+    {"name": "Prefix$ebnf$1$subexpression$1", "symbols": ["PrefixItem"]},
+    {"name": "Prefix$ebnf$1", "symbols": ["Prefix$ebnf$1", "Prefix$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "Prefix", "symbols": ["Prefix$ebnf$1"], "postprocess": () => null},
+    {"name": "PrefixItem", "symbols": ["_"], "postprocess": () => null},
+    {"name": "PrefixItem", "symbols": ["NL"], "postprocess": () => null},
+    {"name": "StatementList$ebnf$1", "symbols": []},
+    {"name": "StatementList$ebnf$1$subexpression$1", "symbols": ["StatementListItem"]},
+    {"name": "StatementList$ebnf$1", "symbols": ["StatementList$ebnf$1", "StatementList$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "StatementList", "symbols": ["StatementList$ebnf$1"], "postprocess":  
+        // Cero o más StatementListItems
+        (d) => {
+          if (!d || !d[0]) return []; // Maneja el caso de cero items
+          return d[0].map(item => item[0]); // Extrae los statements reales
         }
         },
-    {"name": "StatementList$ebnf$1", "symbols": ["StatementListItem"]},
-    {"name": "StatementList$ebnf$1", "symbols": ["StatementList$ebnf$1", "StatementListItem"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "StatementList", "symbols": ["StatementList$ebnf$1"]},
-    {"name": "StatementListItem", "symbols": ["Statement", "_", "NL"]},
-    {"name": "Statement", "symbols": ["VarDecl"], "postprocess": id},
-    {"name": "Statement", "symbols": ["FuncDecl"]},
-    {"name": "Statement", "symbols": ["StructDecl"]},
-    {"name": "Statement", "symbols": ["PrintStmt"]},
-    {"name": "Statement", "symbols": ["InputStmt"]},
+    {"name": "StatementListItem", "symbols": ["Statement", "_", "NL"], "postprocess": (d) => d[0]},
     {"name": "Statement", "symbols": ["ReturnStmt"]},
-    {"name": "Statement", "symbols": ["IfStmt"]},
-    {"name": "Statement", "symbols": ["WhileStmt"]},
-    {"name": "Statement", "symbols": ["ExprStmt"]},
-    {"name": "VarDecl", "symbols": [(lexer.has("KW_LET") ? {type: "KW_LET"} : KW_LET), "_", "identifier", "_", (lexer.has("assign") ? {type: "assign"} : assign), "_", "Expression", "_", (lexer.has("eol") ? {type: "eol"} : eol)], "postprocess": 
-        (d) => {
+    {"name": "OptionalTypeAnnotation", "symbols": ["_", (lexer.has("colon") ? {type: "colon"} : colon), "_", "Type"], "postprocess": ([, , , type]) => type},
+    {"name": "OptionalTypeAnnotation", "symbols": [], "postprocess": () => null},
+    {"name": "OptionalInitializer", "symbols": ["_", (lexer.has("assign") ? {type: "assign"} : assign), "_", "Expression"], "postprocess": ([, , , expr]) => expr},
+    {"name": "OptionalInitializer", "symbols": [], "postprocess": () => null},
+    {"name": "VarDecl", "symbols": [(lexer.has("KW_LET") ? {type: "KW_LET"} : KW_LET), "_", "identifier", "OptionalTypeAnnotation", "OptionalInitializer", "_", (lexer.has("eol") ? {type: "eol"} : eol)], "postprocess": 
+        (data) => {
           return {
             type: "VarDecl",
-            id: d[2],       // El token identifier
-            varType: null,  // No hay tipo en esta versión simplificada
-            expr: d[5]      // El nodo Expression (índice 0:KW_LET, 1:_, 2:id, 3:_, 4:assign, 5:expr)
+            id: data[2],
+            varType: data[3],
+            expr: data[4]
           };
         }
         },
@@ -252,7 +253,7 @@ var grammar = {
     {"name": "NL$ebnf$1", "symbols": ["NL$ebnf$1", "NL$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "NL", "symbols": [(lexer.has("newline") ? {type: "newline"} : newline), "NL$ebnf$1"], "postprocess": () => null}
 ]
-  , ParserStart: "OptionalLeadingPart"
+  , ParserStart: "Program"
 }
 if (typeof module !== 'undefined'&& typeof module.exports !== 'undefined') {
    module.exports = grammar;
